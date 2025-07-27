@@ -6,7 +6,7 @@
   },
   "bugs": "https://github.com/jsscheller/openai-handle/issues",
   "forum": "https://github.com/jsscheller/openai-handle/discussions",
-  "dependencies": {
+  "devDependencies": {
     "esbuild": "^0.21.2",
     "runish": "^0.1.0",
     "serdev": "^0.1.0",
