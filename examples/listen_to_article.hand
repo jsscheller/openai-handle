@@ -1,0 +1,58 @@
+// Listen to article - convert a webpage into an audio file.
+
+// All network access is blocked by default. This program requires access to the
+// OpenAI API so we must allow the following origin.
+#![allow_net("https://api.openai.com")]
+
+// STEP 1
+// ======
+// Provide an OpenAI API key. Sign up here: https://platform.openai.com/signup.
+configure openai {
+    api_key: @secret(""),
+}
+
+// STEP 2
+// ======
+// Provide the webpage as a PDF file. Convert any webpage into a PDF by navigating to
+// the page in a browser, selecting "Print..." then save as PDF.
+pdf = @file("chocolate.pdf")
+
+// Remove images from the PDF to reduce its size.
+log("removing images from PDF")
+pdf = pdf-util/remove_images(pdf = pdf)
+
+// STEP 3
+// ======
+// Click the play button to run this program.
+//
+// The rest of the code extracts the text from the PDF, splits the text into chunks
+// small enough for OpenAI's API, converts the chunks into audio files then combines
+// the files into a single file.
+
+log("extracting text")
+text = openai/responses/create(
+    input = "Please extract the main body content as plaintext without adding any comments before/after.",
+    model = "gpt-4.1",
+    files = [pdf],
+)
+
+log("chunking text")
+text_chunks = text-util/chunks(text, 4096)
+
+audio_files: List<File> = []
+for text_chunk, index in text_chunks {
+    log(`converting text to speech {index + 1} / {text_chunks.length}`)
+    audio_file = openai/audio/speech/create(
+        input = text_chunk,
+        model = "gpt-4o-mini-tts",
+        voice = "alloy",
+    )
+    audio_files.push(audio_file)
+}
+
+if audio_files.length.greater_than(1) {
+    log("combining audio files into single file")
+    audio-util/join(audio_files)
+} else {
+    audio_files.get(0)
+}
